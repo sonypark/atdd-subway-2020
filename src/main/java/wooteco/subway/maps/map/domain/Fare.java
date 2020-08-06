@@ -2,13 +2,15 @@ package wooteco.subway.maps.map.domain;
 
 public class Fare {
     public static int calculateFare(int totalDistance) {
+        int basePrice = 1250;
         if (totalDistance <= 10) {
-            return 1250;
+            return basePrice;
         }
         if (totalDistance <= 50) {
-            return 1250 + calculateOverFare(totalDistance - 10, 5);
+            return basePrice + calculateOverFare(totalDistance - 10, 5);
         }
-        return 1250 + calculateOverFare(totalDistance - 50, 8);
+        int middlePrice = basePrice + calculateOverFare(40, 5);
+        return middlePrice + calculateOverFare(totalDistance - 50, 8);
     }
 
     private static int calculateOverFare(int distance, int overDistance) {
