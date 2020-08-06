@@ -1,10 +1,17 @@
 package wooteco.subway.maps.map.application;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import wooteco.subway.maps.line.application.LineService;
 import wooteco.subway.maps.line.domain.Line;
 import wooteco.subway.maps.line.dto.LineResponse;
 import wooteco.subway.maps.line.dto.LineStationResponse;
+import wooteco.subway.maps.map.domain.LineStationEdge;
 import wooteco.subway.maps.map.domain.PathType;
 import wooteco.subway.maps.map.domain.SubwayPath;
 import wooteco.subway.maps.map.dto.MapResponse;
@@ -13,11 +20,6 @@ import wooteco.subway.maps.map.dto.PathResponseAssembler;
 import wooteco.subway.maps.station.application.StationService;
 import wooteco.subway.maps.station.domain.Station;
 import wooteco.subway.maps.station.dto.StationResponse;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -37,8 +39,8 @@ public class MapService {
         Map<Long, Station> stations = findStations(lines);
 
         List<LineResponse> lineResponses = lines.stream()
-                .map(it -> LineResponse.of(it, extractLineStationResponses(it, stations)))
-                .collect(Collectors.toList());
+            .map(it -> LineResponse.of(it, extractLineStationResponses(it, stations)))
+            .collect(Collectors.toList());
 
         return new MapResponse(lineResponses);
     }
@@ -48,21 +50,27 @@ public class MapService {
         SubwayPath subwayPath = pathService.findPath(lines, source, target, type);
         Map<Long, Station> stations = stationService.findStationsByIds(subwayPath.extractStationId());
 
-        return PathResponseAssembler.assemble(subwayPath, stations);
+        List<LineStationEdge> lineStationEdges = subwayPath.getLineStationEdges();
+
+        List<Long> lineIds = lineStationEdges.stream()
+            .map(lineStationEdge -> lineStationEdge.getLineId())
+            .collect(Collectors.toList());
+        int maxLineFare = lineService.extractHighestLineExtraFare(lineIds);
+        return PathResponseAssembler.assemble(subwayPath, stations, maxLineFare);
     }
 
     private Map<Long, Station> findStations(List<Line> lines) {
         List<Long> stationIds = lines.stream()
-                .flatMap(it -> it.getStationInOrder().stream())
-                .map(it -> it.getStationId())
-                .collect(Collectors.toList());
+            .flatMap(it -> it.getStationInOrder().stream())
+            .map(it -> it.getStationId())
+            .collect(Collectors.toList());
 
         return stationService.findStationsByIds(stationIds);
     }
 
     private List<LineStationResponse> extractLineStationResponses(Line line, Map<Long, Station> stations) {
         return line.getStationInOrder().stream()
-                .map(it -> LineStationResponse.of(line.getId(), it, StationResponse.of(stations.get(it.getStationId()))))
-                .collect(Collectors.toList());
+            .map(it -> LineStationResponse.of(line.getId(), it, StationResponse.of(stations.get(it.getStationId()))))
+            .collect(Collectors.toList());
     }
 }

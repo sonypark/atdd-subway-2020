@@ -83,27 +83,28 @@ public class PathAcceptanceTest extends AcceptanceTest {
     @DisplayName("거리별 요금을 계산한다.")
     @TestFactory
     Stream<DynamicTest> calculateFareByDistance() {
+        int 노선_추가_요금 = 100;
         return Stream.of(
             dynamicTest("10km 이내 기본 운임", () ->{
                 //when
                 ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 3L);
 
                 적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역));
-                거리별_요금_계산(response, 3);
+                거리별_요금_계산(response, 3, 노선_추가_요금);
             }),
             dynamicTest("10km 초과부터 50km 이내 운임", () ->{
                 //when
                 ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 5L);
 
                 적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역));
-                거리별_요금_계산(response, 19);
+                거리별_요금_계산(response, 19, 노선_추가_요금);
             }),
             dynamicTest("50km 초과 운임", () ->{
                 //when
                 ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 6L);
 
                 적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역, 매봉역));
-                거리별_요금_계산(response, 69);
+                거리별_요금_계산(response, 69, 노선_추가_요금);
             })
         );
     }

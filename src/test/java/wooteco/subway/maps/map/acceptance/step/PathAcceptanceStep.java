@@ -41,9 +41,9 @@ public class PathAcceptanceStep {
         assertThat(pathResponse.getDuration()).isEqualTo(totalDuration);
     }
 
-    public static void 거리별_요금_계산(ExtractableResponse<Response> response, int totalDistance) {
+    public static void 거리별_요금_계산(ExtractableResponse<Response> response, int totalDistance, int extraFare) {
         PathResponse pathResponse = response.as(PathResponse.class);
-        assertThat(pathResponse.getFare()).isEqualTo(calculateFare(totalDistance));
+        assertThat(pathResponse.getFare()).isEqualTo(calculateFare(totalDistance) + extraFare);
     }
 
     private static int calculateFare(int totalDistance) {
