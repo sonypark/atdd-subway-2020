@@ -1,5 +1,6 @@
 import {SET_PATH} from '@/store/shared/mutationTypes'
 import PathService from '@/api/modules/path'
+import {SEARCH_PATH} from "../shared/actionTypes";
 
 const state = {
   pathResult: null
@@ -18,8 +19,8 @@ const mutations = {
 }
 
 const actions = {
-  async searchPath({ commit }, {}) {
-    return PathService.get().then(({ data }) => {
+  async [SEARCH_PATH]({ commit }, {source, target, type}) {
+    return PathService.get(source,target,type).then(({ data }) => {
       commit(SET_PATH, data)
     })
   }
