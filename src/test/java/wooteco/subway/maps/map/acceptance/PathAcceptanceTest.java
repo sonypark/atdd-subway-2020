@@ -1,11 +1,16 @@
 package wooteco.subway.maps.map.acceptance;
 
+import static org.junit.jupiter.api.DynamicTest.*;
 import static wooteco.subway.maps.line.acceptance.step.LineStationAcceptanceStep.*;
 import static wooteco.subway.maps.map.acceptance.step.PathAcceptanceStep.*;
 
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import com.google.common.collect.Lists;
 import io.restassured.response.ExtractableResponse;
@@ -23,6 +28,7 @@ public class PathAcceptanceTest extends AcceptanceTest {
     private Long 양재역;
     private Long 남부터미널역;
     private Long 도곡역;
+    private Long 매봉역;
     private Long 이호선;
     private Long 신분당선;
     private Long 삼호선;
@@ -44,6 +50,7 @@ public class PathAcceptanceTest extends AcceptanceTest {
         양재역 = 지하철역_등록되어_있음("양재역");
         남부터미널역 = 지하철역_등록되어_있음("남부터미널역");
         도곡역 = 지하철역_등록되어_있음("도곡역");
+        매봉역 = 지하철역_등록되어_있음("매봉역");
 
         이호선 = 지하철_노선_등록되어_있음("2호선", "GREEN");
         신분당선 = 지하철_노선_등록되어_있음("신분당선", "RED");
@@ -59,6 +66,7 @@ public class PathAcceptanceTest extends AcceptanceTest {
         지하철_노선에_지하철역_등록되어_있음(삼호선, 교대역, 남부터미널역, 1, 2);
         지하철_노선에_지하철역_등록되어_있음(삼호선, 남부터미널역, 양재역, 2, 2);
         지하철_노선에_지하철역_등록되어_있음(삼호선, 양재역, 도곡역, 16, 2);
+        지하철_노선에_지하철역_등록되어_있음(삼호선, 도곡역, 매봉역, 50, 2);
     }
 
     @DisplayName("두 역의 최단 거리 경로를 조회한다.")
@@ -73,13 +81,31 @@ public class PathAcceptanceTest extends AcceptanceTest {
     }
 
     @DisplayName("거리별 요금을 계산한다.")
-    @Test
-    void calculateFareByDistance() {
-        //when
-        ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 5L);
+    @TestFactory
+    Stream<DynamicTest> calculateFareByDistance() {
+        return Stream.of(
+            dynamicTest("10km 이내 기본 운임", () ->{
+                //when
+                ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 3L);
 
-        적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역));
-        거리별_요금_계산(response, 19);
+                적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역));
+                거리별_요금_계산(response, 3);
+            }),
+            dynamicTest("10km 초과부터 50km 이내 운임", () ->{
+                //when
+                ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 5L);
+
+                적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역));
+                거리별_요금_계산(response, 19);
+            }),
+            dynamicTest("50km 초과 운임", () ->{
+                //when
+                ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 6L);
+
+                적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역, 매봉역));
+                거리별_요금_계산(response, 69);
+            })
+        );
     }
 
     @DisplayName("두 역의 최소 시간 경로를 조회한다.")
