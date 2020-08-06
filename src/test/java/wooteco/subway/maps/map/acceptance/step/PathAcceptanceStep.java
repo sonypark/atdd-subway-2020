@@ -41,9 +41,17 @@ public class PathAcceptanceStep {
         assertThat(pathResponse.getDuration()).isEqualTo(totalDuration);
     }
 
-    public static void 거리별_요금_계산(ExtractableResponse<Response> response, int totalDistance, int extraFare) {
+    public static void 거리별_요금_계산(ExtractableResponse<Response> response, int totalDistance, int extraFare, int age) {
         PathResponse pathResponse = response.as(PathResponse.class);
-        assertThat(pathResponse.getFare()).isEqualTo(calculateFare(totalDistance) + extraFare);
+        int fare = calculateFare(totalDistance) + extraFare;
+        int finalFare = fare;
+        if (13 <= age && age < 19) {
+            finalFare = (int)((fare - 350) * 0.8);
+        }
+        if (6 <= age && age < 13) {
+            finalFare = (int)((fare - 350) * 0.5);
+        }
+        assertThat(pathResponse.getFare()).isEqualTo(finalFare);
     }
 
     private static int calculateFare(int totalDistance) {

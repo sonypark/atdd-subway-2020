@@ -3,6 +3,7 @@ package wooteco.subway.maps.map.acceptance;
 import static org.junit.jupiter.api.DynamicTest.*;
 import static wooteco.subway.maps.line.acceptance.step.LineStationAcceptanceStep.*;
 import static wooteco.subway.maps.map.acceptance.step.PathAcceptanceStep.*;
+import static wooteco.subway.members.member.acceptance.step.MemberAcceptanceStep.*;
 
 import java.util.stream.Stream;
 
@@ -15,14 +16,21 @@ import org.junit.jupiter.api.TestFactory;
 import com.google.common.collect.Lists;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import wooteco.security.core.TokenResponse;
 import wooteco.subway.common.acceptance.AcceptanceTest;
 import wooteco.subway.maps.line.acceptance.step.LineAcceptanceStep;
 import wooteco.subway.maps.line.dto.LineResponse;
 import wooteco.subway.maps.station.acceptance.step.StationAcceptanceStep;
 import wooteco.subway.maps.station.dto.StationResponse;
+import wooteco.subway.members.member.dto.MemberResponse;
 
 @DisplayName("지하철 경로 조회")
 public class PathAcceptanceTest extends AcceptanceTest {
+    public static final String EMAIL = "email@email.com";
+    public static final String PASSWORD = "password";
+
+    private TokenResponse loginResponse;
+
     private Long 교대역;
     private Long 강남역;
     private Long 양재역;
@@ -90,22 +98,36 @@ public class PathAcceptanceTest extends AcceptanceTest {
                 ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 3L);
 
                 적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역));
-                거리별_요금_계산(response, 3, 노선_추가_요금);
+                거리별_요금_계산(response, 3, 노선_추가_요금,0);
             }),
             dynamicTest("10km 초과부터 50km 이내 운임", () ->{
                 //when
                 ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 5L);
 
                 적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역));
-                거리별_요금_계산(response, 19, 노선_추가_요금);
+                거리별_요금_계산(response, 19, 노선_추가_요금,0);
             }),
             dynamicTest("50km 초과 운임", () ->{
                 //when
                 ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 6L);
 
                 적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역, 매봉역));
-                거리별_요금_계산(response, 69, 노선_추가_요금);
+                거리별_요금_계산(response, 69, 노선_추가_요금,0);
+            }),
+            dynamicTest("로그인된 사용 연령별 할인 운임", () ->{
+                회원_등록되어_있음(EMAIL, PASSWORD, 6);
+                TokenResponse tokenResponse = 로그인_되어_있음(EMAIL, PASSWORD);
+                ExtractableResponse<Response> userInfo = 내_회원_정보_조회_요청(tokenResponse);
+                MemberResponse memberResponse = userInfo.as(MemberResponse.class);
+                Integer age = memberResponse.getAge();
+
+                //when
+                ExtractableResponse<Response> response = 거리_경로_조회_요청("DISTANCE", 1L, 6L);
+
+                적절한_경로를_응답(response, Lists.newArrayList(교대역, 남부터미널역, 양재역, 도곡역, 매봉역));
+                // 거리별_요금_계산(response, 69, 노선_추가_요금, age);
             })
+
         );
     }
 
